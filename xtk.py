@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# By Eddie Zaltsman
 # -*- coding: utf-8 -*-
 # x4cker kit v1.2.2
 
