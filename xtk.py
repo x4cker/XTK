@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# x4cker kit v1.2.2
+# x4cker kit v1.5
 
+from prompt_toolkit import prompt
+import pwnlib
+import socketserver as SocketServer
+import http.server
+from http.server import HTTPServer as SimpleHTTPServer
+from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler
+import socket
 import requests
 from pwn import *
 from termcolor import colored
@@ -20,52 +27,135 @@ import subprocess
 from time import sleep
 from subprocess import Popen, PIPE
 from logging import getLogger, ERROR
+import threading
+from colorama import Fore
+from colorama import Style
+import platform
+from simple_term_menu import TerminalMenu
+import argparse
+import asyncore
+import ssl
+import multiprocessing
+import netifaces
+import prompt_toolkit
+
+
+
+t = blessed.Terminal()
+listeners = []
+
+os.chdir(os.getcwd())
+
+def menu(title, menu_list):
+    menu = TerminalMenu(menu_list, title=title)
+    selection = menu.show()
+    return menu_list[selection]
+
+def menu_with_custom_choice(title, menu_list):
+    menu_list.append('Custom')
+    selection = menu(title, menu_list)
+    return selection
+
+
+def get_options(select):
+    if select == "DNS":
+        parser = argparse.ArgumentParser(description='Choose From On Screen Menu', formatter_class=argparse.RawTextHelpFormatter)
+        wordlists = parser.add_mutually_exclusive_group()
+        wordlists.add_argument('-w', '--wordlist', dest='WORDLIST', action='store_const', const='wordlists', help='Choose Wordlist')
+        options = parser.parse_args()
+        menu_list = os.listdir('/root/x4c/SecLists/Discovery/DNS/')
+        options.WORDLIST = menu_with_custom_choice("Choose Wordlist", menu_list)
+        return options
+    else:
+        parser = argparse.ArgumentParser(description='Choose From On Screen Menu', formatter_class=argparse.RawTextHelpFormatter)
+        wordlists = parser.add_mutually_exclusive_group()
+        wordlists.add_argument('-w', '--wordlist', dest='WORDLIST', action='store_const', const='wordlists', help='Choose Wordlist')
+        options = parser.parse_args()
+        menu_list = os.listdir('/root/x4c/SecLists/Discovery/Web-Content/')
+        options.WORDLIST = menu_with_custom_choice("Choose Wordlist", menu_list)
+        return options
 
 def x4menu():
     try:
         print('''\n
-                         ''' + colored('[X4CKERTOOLKIT v1.1.5]', 'red', attrs=['bold']) + '''
-            [1]   STEALTH SCANNER           [11]  CIPHERCHEF
-            [2]   MSF AUTOMATED             [12]  MOSINT
-            [3]   MITM SNIFFER              [13]  SHODAN
-            [4]   ONE LINER                 [14]  TEMPMAIL
-            [5]   HASH CHECKER              [15]  SCRY
-            [6]   URL FUZZER                [16]  ADVPHISHING
-            [7]   WINLOADS                  [17]  SHERLOCK
-            [8]   SQLMAP                    [18]  COMMIX
-            [9]   XSRFPROBE                 [19]  LSExploit
-            [10]  SMB12                     [20]  EXIT\n\n\n\n''')
-        select = input(colored('ROOT:', 'red', attrs=['bold']) + colored('~# ', 'white', attrs=['bold']))
+            ''' + colored('[X4CKERTOOLKIT PRO v1.5]\n', 'red', attrs=['bold']) + '''
+            [1]   Scanner  
+            [2]   Metasploit Automated
+            [3]   MITM Sniffer              
+            [4]   Private Droppers   
+            [5]   Hash Identify 
+            [6]   Fuff Automated  
+            [7]   Shellerator  
+            [8]   SQLMap                     
+            [9]   XSRFProbe                   
+            [10]  SMB12    
+            [11]  CipherChef
+            [12]  LFISuite
+            [13]  Shodan
+            [14]  TempMail
+            [15]  JWTweak
+            [16]  Phishing 
+            [17]  Commix WebPT
+            [18]  Hashcat Automated
+            [19]  C2 Server TCP
+            [20]  C2 Server SSL
+            [21]  PassList Creator
+            [22]  EXIT\n\n\n''')
+        if len(listeners) < 1:
+            select = input(colored('ROOT:', 'red', attrs=['bold']) + colored('~# ', 'white', attrs=['bold']))
+        else:
+            try:
+                for i in range(len(listeners)):
+                    print(f"\n[X] Listening on {listeners[i]}")
+            except Exception as error:
+                print(error)
+                pass
+            select = input(colored('ROOT:', 'red', attrs=['bold']) + colored('~# ', 'white', attrs=['bold']))
         select = select.replace("\n", "")
         if select == '?' or select == 'help':
             x4menu()
         if select == '1' or select == 'scan':
             netscanmenu()
-        elif select == '20' or select == 'exit':
-            print("\n--- By Eddie Zaltsman,HackerU ---\n")
+        elif select == 'listener':
+            lport = input("lport : ")
+            decide = input("[1]  SSL\n[2]  Netcat\n\n> ")
+            if "N" in decide or "n" in decide or "netcat" in decide or "2" in decide:
+                xterm = subprocess.Popen(f"""xterm -geometry 100x24 -hold -e 'nc -lvnp {lport}'""", shell=True)
+            else:
+                xterm = subprocess.Popen(f"""xterm -geometry 100x24 -hold -e 'nc -lvnp {lport}'""", shell=True)
+            x4menu()
+        elif select == 'netcat':
+            lport = input("lport : ")
+            xterm = subprocess.Popen(f"""xterm -geometry 100x24 -hold -e 'nc -lvnp {lport}'""", shell=True)
+            x4menu()
+        elif select == '21' or select == 'exit':
+            print("\n--- BY3 By3 ---\n")
             exit()
+        elif select == '20':
+            xterm = subprocess.Popen("""xterm -geometry 100x24 -hold -e 'cd /root/Winpayloads/ && python WinPayloads.py'""",shell=True)
+            x4menu()
+        elif select == '21':
+            xterm = subprocess.Popen("""xterm -geometry 100x24 -hold -e 'cd /root/x4c/elpscrk/ && python3 elpscrk.py --leet --level 3 --chars --years 1960'""",shell=True)
+            x4menu()
         elif select == '2':
             msf()
+        elif select == "18":
+            print(f"\n{colored('Hashcat Rule Set to : OneRuleToRuleThemAll.', 'red')}\n")
+            location = input("Input Hash to Crack or Location : ").replace("\n", "")
+            hashtype = input("Input Hash Type (Number) : ").replace("\n","")
+            xterm = subprocess.Popen(['xterm', '-hold', '-e', f'hashcat -m {hashtype} {location} -r /root/x4c/Optimised-hashcat-Rule/OneRuleToRuleThemAll.rule /root/x4c/SecLists/Passwords/Leaked-Databases/rockyou.txt'])
+            x4menu()
+        elif select == "22":
+            r = listen((input("lport : ").replace("\n", "")))
+            we_listen(r)
+
         elif select == 'banner':
             print("\n\n\n")
             x4menu()
         elif select == '3':
             sslsniffer()
-        elif select == 'phone':
-            r = requests.get('https://sms24.me/countries/il').text
-            r = re.findall(r'[1697]\d{1,2}.\d{2,3}.\d{3,3}',r)
-            for i in r:
-                if len(i) <= 9:
-                    pass
-                else:
-                    print(i)
-           # tester = subprocess.Popen(f"""xterm -geometry 100x24 -T 'PHONEFUCKER' -hold -e 'curl'""", shell=True)https://sms24.me/number-972552603210
-        elif select == '4':
-            venom()
         elif select == '5':
             hashbruter()
-        elif select == '7':
-            oneliner()
         elif select == '8':
             sqlmap()
         elif select == '6' or select == 'url':
@@ -79,11 +169,14 @@ def x4menu():
             x4menu()
         elif select == '11':
             os.system('service apache2 start')
-            tester = subprocess.Popen(f"""xterm -geometry 100x24 -T 'CHROME' -hold -e 'google-chrome --no-sandbox http://localhost/cychef.html'""", shell=True)
+            tester = subprocess.Popen([f"google-chrome", "--no-sandbox", "http://localhost/cychef.html"], stderr=subprocess.PIPE,stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             print("\n", "")
             x4menu()
         elif select == '12':
-            tester = subprocess.Popen("""xterm -geometry 100x24 -hold -e 'proxychains mosint'""", shell=True)
+            tester = subprocess.Popen("""xterm -geometry 100x24 -hold -e 'python /root/LFISuite/lfisuite.py'""",shell=True)
+            x4menu()
+        elif select == '7':
+            tester = subprocess.Popen("""xterm -geometry 100x24 -hold -e 'python3 /root/shellerator/shellerator.py'""", shell=True)
            # os.system(f'cd /root/x4c/x4ckertoolkit/mosint/ && python3 mosint.py')
             x4menu()
         elif select == '13':
@@ -99,24 +192,20 @@ def x4menu():
             testor = subprocess.Popen("xterm -geometry 100x24 -T 'TEMPOMAIL' -hold -e 'tempomail'", shell=True)
             x4menu()
         elif select == '15':
-            target0r = input("Input Target : ").replace("\n", "")
-            testor = subprocess.Popen(f"xterm -geometry 100x24 -T 'SCRYING' -hold -e 'scrying -t {target0r}'", shell=True)
+            testor = subprocess.Popen(f"xterm -geometry 100x24 -T 'SCRYING' -hold -e 'python3 /root/JWTweak/JWTweak.py'", shell=True)
             x4menu()
         elif select == '16':
             testor = subprocess.Popen(f"xterm -geometry 100x24 -T AdvPhishing -hold -e 'cd /root/AdvPhishing/ && bash AdvPhishing.sh'", shell=True)
             x4menu()
-
-        elif select == '17':
-            mail = input("Type Username to Test: ").replace("\n", "")
-            testor = subprocess.Popen(f"xterm -geometry 100x24 -T Sherlock -hold -e 'cd /root/sherlock/sherlock && python3 sherlock.py {mail}'", shell=True)
+        elif select == '4':
+            testor = subprocess.Popen(f"gnome-terminal -e '/root/PycharmProjects/pythonProject1/venv/bin/python /root/PycharmProjects/pythonProject1/pwner.py'", stderr=subprocess.PIPE, stdin=subprocess.PIPE, stdout=subprocess.PIPE,shell=True)
             x4menu()
-        elif select == '18':
+        elif select == '17':
             urli = input("Input URL(HTTPS/HTTP) : ").replace("\n", "")
-            testor = subprocess.Popen(f"xterm -geometry 100x24 -T COMMIX -hold -e 'proxychains -q commix -u {urli} --random-agent --level 3'",shell=True)
+            testor = subprocess.Popen(f"xterm -geometry 100x24 -T COMMIX -hold -e 'commix -u {urli} --random-agent --level 3'",shell=True)
             x4menu()
         elif select == '19':
-            code = input("PRNT.SC Code : ").replace("\n", "")
-            testor = subprocess.Popen(f"xterm -geometry 24x14 -T MOTHERFUCKER -hold -e 'cd /root/x4c/x4ckertoolkit/motherfucker && python3 motherfucker.py --code {code}'", shell=True)
+            testor = subprocess.Popen(f"gnome-terminal -e 'Platypus_linux_amd64'", stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
             x4menu()
         else:
             print("\nInvalid Input, Please Select from the Following Options.")
@@ -127,6 +216,7 @@ def x4menu():
         print("\n Script Made for PRV Use - Restarting\n")
         banner()
         x4menu()
+
 def netscanmenu():
     select = input('\n[1]   X4 QUICK NETWORK TRACEROUTE\n[2]   X4 TARGET SCANNER\n[3]   BACK\n\n' + colored('ROOT:', 'red', attrs=['bold']) + colored('~# ', 'white', attrs=['bold']))
     select = select.replace("\n", "")
@@ -143,6 +233,7 @@ def netscanmenu():
         print("Invalid Input - Going Back...")
         sleep(1)
         netscanmenu()
+
 def targetscan():
     target = input("[X4] Please Enter Target: ")
     target.replace("\n", "")
@@ -153,12 +244,13 @@ def targetscan():
     if portscaner == 'y' or portscaner == 'yes':
         portnum = input("[X4] Type Ports , (Ex: 21,22,445) : ")
         portnum = portnum.replace("\n", "")
-        xterm = subprocess.Popen(['xterm', '-hold', '-e', f'nmap -sV -sC -p{portnum} -v {target}'])
+        xterm = subprocess.Popen(['xterm', '-hold', '-e', f'nmap -sV -sC --script=default,vuln -p{portnum} -v {target}'])
         sleep(1)
         x4menu()
     else:
         x4menu()
     x4menu()
+
 def sslsniffer():
     print("\nAvailable Devices: \n")
     os.system("ifconfig | grep 'eth\|tun'")
@@ -179,17 +271,20 @@ def sslsniffer():
     xterm2.communicate()
 
     x4menu()
+
 def tracer():
     print("[++] Sudo Rights are Needed for this Scan [++]")
     trgt = input("[X4] Type Range to Scan (Ex: 10.0.0.0/24) : ")
     os.system(f'sudo nmap -sn --traceroute {trgt}')
     sleep(0.5)
     netscanmenu()
+
 def hashbruter():
     hashed = input("Type HASH: ")
     os.system(f'hash-identifier {hashed}')
     input("\nPress any Key to continue...\n")
     x4menu()
+
 def msf():
     payload = input('''[1] APK
 [2] ASP
@@ -296,6 +391,7 @@ def msf():
         msf()
     elif payload == '15':
         x4menu()
+
 def sireprat():
     choice = input("Send or Activate[S,A,E]? ")
     choice = choice.replace("\n", "")
@@ -331,6 +427,7 @@ def sireprat():
     else:
         print("Wrong Input")
         sireprat()
+
 def sqlmap():
     select = input("Request or URL ? (r,u)\n" + colored('ROOT:', 'red', attrs=['bold']) + colored('SQLMAP > ', 'white')).replace("\n","")
     if select == "r" or select == "req" or select == "request":
@@ -346,12 +443,17 @@ def sqlmap():
     else:
         print("Invalid Option")
         sqlmap()
+
 def xsrf():
-    url = input("Input URL : ")
-    url = url.replace("\n", "")
-    xterm = subprocess.Popen(['xterm', '-hold', '-e', f'xsrfprobe -u {url}'])
+    url = input("Input URL : ").replace("\n", "")
+    if url[-1] == "/":
+        xterm = subprocess.Popen(['xterm', '-hold', '-e', f'xsrfprobe -u {url}'])
+    else:
+        url = url + "/"
+        xterm = subprocess.Popen(['xterm', '-hold', '-e', f'xsrfprobe -u {url}'])
     sleep(1)
     x4menu()
+
 def banner():
     print("""
                         ██╗  ██╗██╗  ██╗ ██████╗
@@ -368,38 +470,78 @@ def banner():
                           
                                       
 """)
-def venom():
-    os.system('python3 /root/x4c/OneLinerX4/OneLiner.py')
-    sleep(1)
-    x4menu()
+
 def subd():
-    print("[X] --- Input FUZZ in the chosen place. --- [X]\n")
-    print("[X] --- Exmaple: https://FUZZ.jjisrael.com ---- [X]\n")
-    url = input("Input URL: ").replace("\n", "")
+    global custom_wordlist
+    print("[X] - Input FUZZ in the chosen place. - [X]\n")
+    print("[X] - Exmaple: https://FUZZ.jjisrael.com - [X]\n")
+    url = input("Input URL (http/https): ").replace("\n", "")
+    filter_words = input("Input MW (Filter Results by Amount of Words - Ex: 10-40000): ").replace("\n", "")
+    ignore_code = input("Input Response Codes Saparated by Comma to Ignore or Leave Empty :").replace("\n", "")
+    if len(ignore_code) >= 2:
+        pass
+    else:
+        ignore_code = "400"
+    if len(filter_words) >= 1:
+        pass
+    else:
+        filter_words = "10"
     url = url.replace("\n", "")
     if "FUZZ" in url:
-        if url[-4:] == "FUZZ":
-            xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -c -w /usr/share/dirb/wordlists/common.txt -u {url} -fc 404,429 -recursion -recursion-depth 3 -H "User-Agent: Im4Ph0n3_Bu7n07r34lly"'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""", shell=True)
+        if url[-4:] == "FUZZ" or "FUZZ" in url[-7:]:
+            agression = input("(A)gressive or (C)ustom Wordlist? ")
+            if "C" in agression or "c" in agression:
+                custom_wordlist = get_options("TEST")
+                xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -c -ic -w /root/x4c/SecLists/Discovery/Web-Content/{custom_wordlist.WORDLIST} -u {url} -mw {filter_words} -fc 404,429,{ignore_code} -recursion -recursion-depth 3 -H "User-Agent: Im4Ph0n3_Bu7n07r34lly"'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""", shell=True)
+            else:
+                xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -c -ic -w /root/x4c/SecLists/Discovery/Web-Content/directory-list-lowercase-2.3-big.txt -u {url} -mw {filter_words} -fc 404,429,{ignore_code} -recursion -recursion-depth 3 -H "User-Agent: Im4Ph0n3_Bu7n07r34lly"'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""", shell=True)
             sleep(1)
             x4menu()
         else:
-            xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -c -w /usr/share/dirb/wordlists/common.txt -u {url} -fc 404,429 -H "User-Agent: Im4Ph0n3_Bu7n07r34lly"'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""", shell=True)
+            if "http://" in url:
+                urlfuzz = url.replace("FUZZ.", "").replace("\n", "")
+                urlstrip = url.replace("http://", "").replace("\n", "")
+                agression = input("(A)gressive or (C)ustom Wordlist? ")
+                if "A" in agression or "a" in agression:
+                        xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -ic -c -w /root/x4c/SecLists/Discovery/DNS/dns-Jhaddix.txt -u {urlfuzz} -H "Host: {urlstrip}" -mw {filter_words} -fc 404,429,{ignore_code}'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""", shell=True)
+                else:
+                    if "C" in agression or "c" in agression or "" in agression:
+                        custom_wordlist = get_options("DNS")
+                        xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -ic -c -w /root/x4c/SecLists/Discovery/DNS/{custom_wordlist.WORDLIST} -u {urlfuzz} -H "Host: {urlstrip}" -mw {filter_words} -fc 404,429,{ignore_code}'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""",shell=True)
+            elif "https://" in url:
+                url.replace("\n", "")
+                urlstrip = url.replace("https://", "").replace("\n", "")
+                urlfuzz = url.replace("FUZZ.", "").replace("\n", "")
+                agression = input("(A)gressive or (C)ustom Wordlist? ")
+                if "A" in agression or "a" in agression:
+
+                    xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -ic -c -w /root/x4c/SecLists/Discovery/DNS/dns-Jhaddix.txt -u {urlfuzz} -H "Host: {urlstrip}" -mw {filter_words} -fc 404,429,{ignore_code}'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""",shell=True)
+                else:
+                    if "C" in agression or "c" in agression or "" in agression:
+                        custom_wordlist = get_options("DNS")
+                        xterm = subprocess.Popen(f"""xterm -geometry 100x24 -T 'FUZZER' -hold -e 'ffuf -ic -c -w /root/x4c/SecLists/Discovery/DNS/{custom_wordlist.WORDLIST} -u {urlfuzz} -H "Host: {urlstrip}" -mw {filter_words} -fc 404,429,{ignore_code}'| GREP_COLOR='01;36' grep --color=always -E '|200|INFO|301|$' > /dev/null 2>&1 &""",shell=True)
+            else:
+                print("\n[X] Please Type HTTP or HTTPS[X]\n")
+                sleep(1)
+                subd()
             sleep(1)
             x4menu()
     else:
         print("\n[X] Please Type FUZZ in the Desired Location [X]\n")
         sleep(1)
         subd()
-def oneliner():
-    xterm = subprocess.Popen(['xterm', '-hold', '-e', f'cd /root/x4c/Winpayloads/ && python WinPayloads.py'])
-    sleep(1)
-    x4menu()
 
 
 if __name__ == '__main__':
     getLogger("scapy.runtime").setLevel(ERROR)
     try:
-        x4menu()
+        #thtest = threading.Thread(target=getAndRunMainMenu())
+        thmenu = threading.Thread(target=x4menu())
+        thmenu.daemon = True
+        thmenu.start()
+
+
+
     except KeyboardInterrupt:
         sleep(1)
         print("\n Script Made for PRV Use - Restarting\n")
